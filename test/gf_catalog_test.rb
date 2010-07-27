@@ -23,6 +23,12 @@ class GFProjectTest < Test::Unit::TestCase
     assert_instance_of Array, GFCatalog.projects
   end
 
+  def test_projects_uses_instance_variable
+    GFCatalog.projects
+    ENV[:TWO_TASK] = nil
+    assert_equal 2, GFCatalog.projects.length
+  end
+
   def test_projects_returns_GFProject_objects
     assert_instance_of GFProject, GFCatalog.projects.first
   end
