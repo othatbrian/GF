@@ -22,8 +22,4 @@ class GFCatalogTest < Test::Unit::TestCase
   def test_projects_returns_GFProject_objects
     assert_instance_of GFProject, GFCatalog.projects.first
   end
-  
-  def test_account_returns_GFProject
-    assert_equal 'TEST1', GFCatalog.account('test1')
-  end
 end
