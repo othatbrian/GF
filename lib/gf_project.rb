@@ -50,6 +50,12 @@ class GFProject
     first[:value_string]
   end
   
+  def super_server_command
+    @connection[:project].
+    select(:super_server_command).
+    first[:super_server_command]
+  end
+  
   private
   def connect(password)
     Sequel.oracle(:database => ENV[:TWO_TASK], :user => @account, :password => password, :test => true)

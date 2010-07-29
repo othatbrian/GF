@@ -13,7 +13,7 @@ class GFProjectTest < Test::Unit::TestCase
     project = GFProject.new :test1, :TEST1, :test1
     assert_nothing_raised { project.account }
   end
-
+  
   def test_password_invalid_default_invalid_GFDBA_not_set_message
     unset_gfdba_password do
       assert_block do
@@ -37,7 +37,7 @@ class GFProjectTest < Test::Unit::TestCase
       end
     end
   end
-
+  
   def test_password_invalid_default_invalid_GFDBA_invalid_message
     unset_gfdba_password do
       ENV[:GFDBA_PASSWORD] = :bogus
@@ -50,7 +50,7 @@ class GFProjectTest < Test::Unit::TestCase
       end
     end
   end
- 
+  
   def test_password_not_set_default_invalid_GFDBA_invalid_message
     unset_gfdba_password do
       ENV[:GFDBA_PASSWORD] = :bogus
@@ -63,12 +63,17 @@ class GFProjectTest < Test::Unit::TestCase
       end
     end
   end
-
+  
   def test_bulk_server_command
     project = GFProject.new :test1, :TEST1
     assert_equal 'LOCAL:TEST1@hesz04.internal.houstonenergyinc.com:/apps/geoframe/geoframe_44_sun/bin/ctsrvr_init.csh', project.bulk_server_command
   end
-
+  
+  def test_super_server_command
+    project = GFProject.new :test1, :TEST1
+    assert_equal 'LOCAL:hesz04.internal.houstonenergyinc.com:/apps/geoframe/geoframe_44_sun/bin/apu_superserver_init.csh', project.super_server_command
+  end
+  
   private
   def unset_gfdba_password
     gfdba = ENV[:GFDBA_PASSWORD] if ENV[:GFDBA_PASSWORD]
