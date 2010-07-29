@@ -13,17 +13,17 @@ class GFProject
   end
   
   def bulk_server_command
-    @connection.from(:parameter).
-    filter(:code => 'Bulk_Server_Command').
-    get(:value_string)
+    query do |db|
+      db.from(:parameter).filter(:code => 'Bulk_Server_Command').get(:value_string)
+    end
   end
     
-  def connect(password = nil, &block)
+  def password(password = nil)
     catch :connected do
       errors = ''
       if password
         begin
-          throw(:connected) if @connection = connect_with_supplied_password(password)
+          throw(:connected) if (@connection = connect_with_supplied_password(password))
         rescue
           errors = $!.to_s
         end
@@ -31,13 +31,14 @@ class GFProject
         errors = "project password is not set" unless password
       end
       begin
-        throw(:connected) if @connection = connect_with_default_password
+        throw(:connected) if (@connection = connect_with_default_password)
       rescue
         errors += " and " + $!.to_s
       end
       if ENV[:GFDBA_PASSWORD]
         begin
-          throw(:connected) if @connection = connect_with_gfdba_password
+          throw(:connected) if (@connection = connect_with_gfdba_password)
+
         rescue
           errors += " and " + $!.to_s
         end
@@ -46,19 +47,19 @@ class GFProject
       end
       raise(RuntimeError, errors)
     end
-    if block 
-      yield(self)
-      disconnect
-    end
     self
   end
   
-  def disconnect
-    @connection.disconnect if @connection
+  def last_modified
+    query do |db|
+      db.from(:project).get(:modify_date)
+    end
   end
   
   def super_server_command
-    @connection.from(:project).get(:super_server_command)
+    query do |db|
+      db.from(:project).get(:super_server_command)
+    end
   end
   
   private
@@ -69,6 +70,7 @@ class GFProject
   def connect_with_default_password
     begin
       attempt_connect @name
+      @password = @name
     rescue Sequel::DatabaseConnectionError
       raise RuntimeError, 'project default password is not valid'
     end
@@ -84,6 +86,7 @@ class GFProject
         stdout.read =~ /^Password =(.*)$/m
         attempt_connect $1.chomp
       end
+      @password = $1.chomp
     rescue Errno::ENOENT
       raise RuntimeError, 'proj_get_password not found'
     end
@@ -92,8 +95,16 @@ class GFProject
   def connect_with_supplied_password(password)
     begin
       attempt_connect password
+      @password = password
     rescue Sequel::DatabaseConnectionError
       raise RuntimeError, "project password \"#{password}\" is not valid"
+    end
+  end
+  
+  def query(&block)
+    password unless @password
+    Sequel.oracle(:database => ENV[:TWO_TASK], :user => @account, :password => @password) do |db|
+      yield db
     end
   end
 end
