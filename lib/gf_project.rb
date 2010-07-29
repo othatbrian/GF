@@ -7,10 +7,18 @@ class GFProject
   attr_reader :name
   attr_reader :account
   
-  def initialize(name, account, password = nil)
+  def initialize(name, account)
     @name = name
     @account = account
+  end
+  
+  def bulk_server_command
+    @connection.from(:parameter).
+    filter(:code => 'Bulk_Server_Command').
+    get(:value_string)
+  end
     
+  def connect(password = nil, &block)
     catch :connected do
       errors = ''
       if password
@@ -38,32 +46,29 @@ class GFProject
       end
       raise(RuntimeError, errors)
     end
-    
-    @password = password
+    if block 
+      yield(self)
+      disconnect
+    end
     self
   end
   
-  def bulk_server_command
-    @connection[:parameter].
-    select(:value_string).
-    filter(:code => 'Bulk_Server_Command').
-    first[:value_string]
+  def disconnect
+    @connection.disconnect if @connection
   end
   
   def super_server_command
-    @connection[:project].
-    select(:super_server_command).
-    first[:super_server_command]
+    @connection.from(:project).get(:super_server_command)
   end
   
   private
-  def connect(password)
+  def attempt_connect(password)
     Sequel.oracle(:database => ENV[:TWO_TASK], :user => @account, :password => password, :test => true)
   end
   
   def connect_with_default_password
     begin
-      connect @name
+      attempt_connect @name
     rescue Sequel::DatabaseConnectionError
       raise RuntimeError, 'project default password is not valid'
     end
@@ -77,7 +82,7 @@ class GFProject
           raise RuntimeError, 'GFDBA_PASSWORD is not valid'
         end
         stdout.read =~ /^Password =(.*)$/m
-        connect $1.chomp
+        attempt_connect $1.chomp
       end
     rescue Errno::ENOENT
       raise RuntimeError, 'proj_get_password not found'
@@ -86,7 +91,7 @@ class GFProject
   
   def connect_with_supplied_password(password)
     begin
-      connect password
+      attempt_connect password
     rescue Sequel::DatabaseConnectionError
       raise RuntimeError, "project password \"#{password}\" is not valid"
     end
