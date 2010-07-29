@@ -64,10 +64,10 @@ class GFProjectTest < Test::Unit::TestCase
     end
   end
 
-#  def test_bulk_server_command
-#    project = GFProject.new :test1, :TEST1
-#    assert_equal 'foo', project.bulk_server_command
-#  end
+  def test_bulk_server_command
+    project = GFProject.new :test1, :TEST1
+    assert_equal 'LOCAL:TEST1@hesz04.internal.houstonenergyinc.com:/apps/geoframe/geoframe_44_sun/bin/ctsrvr_init.csh', project.bulk_server_command
+  end
 
   private
   def unset_gfdba_password

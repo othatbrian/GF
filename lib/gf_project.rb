@@ -15,7 +15,7 @@ class GFProject
       errors = ''
       if password
         begin
-          throw(:connected) if connect_with_supplied_password(password)
+          throw(:connected) if @connection = connect_with_supplied_password(password)
         rescue
           errors = $!.to_s
         end
@@ -23,13 +23,13 @@ class GFProject
         errors = "project password is not set" unless password
       end
       begin
-        throw(:connected) if connect_with_default_password
+        throw(:connected) if @connection = connect_with_default_password
       rescue
         errors += " and " + $!.to_s
       end
       if ENV[:GFDBA_PASSWORD]
         begin
-          throw(:connected) if connect_with_gfdba_password
+          throw(:connected) if @connection = connect_with_gfdba_password
         rescue
           errors += " and " + $!.to_s
         end
@@ -38,16 +38,16 @@ class GFProject
       end
       raise(RuntimeError, errors)
     end
+    
+    @password = password
     self
   end
   
   def bulk_server_command
-    query do |db|
-      db[:paramter].
-      select(:value_string).
-      filter(:code => 'Bulk_Server_Command').
-      first[:value_string]
-    end
+    @connection[:parameter].
+    select(:value_string).
+    filter(:code => 'Bulk_Server_Command').
+    first[:value_string]
   end
   
   private
