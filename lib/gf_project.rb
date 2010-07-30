@@ -17,13 +17,13 @@ class GFProject
       db.from(:parameter).filter(:code => 'Bulk_Server_Command').get(:value_string)
     end
   end
-    
+  
   def password(password = nil)
-    catch :connected do
+    catch :success do
       errors = ''
       if password
         begin
-          throw(:connected) if (@connection = connect_with_supplied_password(password))
+          throw(:success) if connect_with_supplied_password(password)
         rescue
           errors = $!.to_s
         end
@@ -31,14 +31,13 @@ class GFProject
         errors = "project password is not set" unless password
       end
       begin
-        throw(:connected) if (@connection = connect_with_default_password)
+        throw(:success) if connect_with_default_password
       rescue
         errors += " and " + $!.to_s
       end
       if ENV[:GFDBA_PASSWORD]
         begin
-          throw(:connected) if (@connection = connect_with_gfdba_password)
-
+          throw(:success) if connect_with_gfdba_password
         rescue
           errors += " and " + $!.to_s
         end
@@ -64,7 +63,7 @@ class GFProject
   
   private
   def attempt_connect(password)
-    Sequel.oracle(:database => ENV[:TWO_TASK], :user => @account, :password => password, :test => true)
+    Sequel.oracle(:database => ENV[:TWO_TASK], :user => @account, :password => password, :test => true) { |db| db.disconnect }
   end
   
   def connect_with_default_password
@@ -78,15 +77,15 @@ class GFProject
   
   def connect_with_gfdba_password
     begin
-      Open3.popen3("proj_get_password #{name} bogus") do |stdin, stdout, stderr|
+      Open3.popen3("proj_get_password #{@name} bogus") do |stdin, stdout, stderr|
         errors = stderr.read
         if errors =~ /^Invalid password/m
           raise RuntimeError, 'GFDBA_PASSWORD is not valid'
         end
         stdout.read =~ /^Password =(.*)$/m
         attempt_connect $1.chomp
+        @password = $1.chomp
       end
-      @password = $1.chomp
     rescue Errno::ENOENT
       raise RuntimeError, 'proj_get_password not found'
     end
