@@ -1,0 +1,15 @@
+$: << File.expand_path('../../lib', __FILE__)
+
+require 'gf_catalog'
+require 'gf_project'
+
+require 'sequel'
+
+projects = {}
+GFCatalog.projects.each do |project|
+  STDERR.puts project.name
+  project.password(:tigers)
+  projects[project.name] = project.last_modified
+end
+
+projects.sort{ |a,b| DateTime.parse(b[1].to_s) <=> DateTime.parse(a[1].to_s) }.map{ |array| puts array[1].to_s + " " + array[0] }
